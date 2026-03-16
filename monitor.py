@@ -106,11 +106,15 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
     except: return None
 
 def run():
+    # 1. 加载缓存
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, "r") as f:
             seen_ids = set(f.read().splitlines())
     else:
         seen_ids = set()
+
+    # 2. 建立一个“当前运行中”的临时记录，防止同一次运行内重复
+    current_batch_seen = set()
 
     try:
         resp = requests.get(FEED_URL, headers=SEC_HEADERS, impersonate="chrome120", timeout=30)
@@ -119,25 +123,37 @@ def run():
         
         for entry in feed.entries:
             acc_id = entry.link.split('/')[-2]
-            if acc_id in seen_ids: continue
+            
+            # --- 核心修复：检查持久化缓存 OR 当前批次缓存 ---
+            if acc_id in seen_ids or acc_id in current_batch_seen:
+                continue
+            
+            # 立即标记为已看到，防止同一批次里的 Subject/Reporting 重复触发
+            current_batch_seen.add(acc_id)
             
             xml_data, display_url = get_xml_data(entry.link)
             if xml_data:
                 msg = check_and_parse(xml_data, display_url, entry.updated)
                 if msg:
-                    # 同时向所有目标推送
+                    # 推送
                     for cid in CHAT_IDS:
                         if cid.strip(): send_telegram(msg, cid)
-                    print(f"已推送报表: {acc_id}")
-                new_ids.append(acc_id)
+                    print(f"✅ 已推送: {acc_id}")
+                    
+                    # 只有真正符合过滤条件并推送到 TG 的，才记入 new_ids
+                    # 如果你希望所有处理过的（无论是否符合金额条件）都以后不再处理，
+                    # 这一行应该放在 if xml_data 之后
+                    new_ids.append(acc_id)
 
-        # 更新本地记录
+        # 3. 更新持久化缓存文件
         if new_ids:
             with open(CACHE_FILE, "a") as f:
-                for i in new_ids: f.write(i + "\n")
+                for i in new_ids:
+                    f.write(i + "\n")
+            print(f"📊 本次新增 {len(new_ids)} 条记录到缓存")
                 
     except Exception as e:
-        print(f"运行异常: {e}")
+        print(f"🚨 运行异常: {e}")
 
 if __name__ == "__main__":
     run()
