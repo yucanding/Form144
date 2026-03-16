@@ -62,6 +62,9 @@ def get_xml_data(index_url):
     return None, None
 
 def check_and_parse(xml_content, display_url, pub_time_raw):
+    """
+    现在这个函数只负责返回核心数据内容，不含标题
+    """
     try:
         root = ET.fromstring(xml_content)
         def get_v(tag):
@@ -87,9 +90,8 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         seller = get_v("nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold") or "未知"
         rel = get_v("relationshipToIssuer") or "未知"
 
-        # 预警单条消息模板
+        # 核心数据模板（移除了标题行）
         item_msg = (
-            f"🚨 <b>重大抛售预警</b>\n"
             f"🕒 发布时间: {pub_time_fmt}\n"
             f"🏢 发行公司: ${ticker} ({issuer})\n"
             f"👤 卖家姓名: {seller} ({rel})\n"
@@ -130,20 +132,26 @@ def run():
                     hit_messages.append(msg_content)
                 new_ids.append(acc_id)
 
-        # --- 修改后的汇总编号逻辑 ---
+        # --- 汇总编号逻辑 ---
         if hit_messages:
-            # 1. 为每条信息增加编号
+            # 1. 统一定义标题
+            header = "🚨 <b>重大抛售预警</b>\n\n"
+            
+            # 2. 为每条信息增加编号
             numbered_messages = [f"{i}. {msg}" for i, msg in enumerate(hit_messages, 1)]
             
+            # 3. 拼接
             separator = "\n" + "—" * 20 + "\n"
-            final_body = separator.join(numbered_messages)
+            body = separator.join(numbered_messages)
             
-            final_message = f"{final_body}\n\n#Form4 #InsiderTrading"
+            final_message = f"{header}{body}\n\n#Form4 #InsiderTrading"
             
-            # 超长处理逻辑
+            # 超长处理
             if len(final_message) > 4000:
+                # 若超长，先发标题，再发带编号的明细
+                for cid in CHAT_IDS:
+                    if cid.strip(): send_telegram(header, cid)
                 for i, single_msg in enumerate(numbered_messages, 1):
-                    # 确保最后一条带 Hashtag
                     send_text = single_msg + (f"\n\n#Form4 #InsiderTrading" if i == len(numbered_messages) else "")
                     for cid in CHAT_IDS:
                         if cid.strip(): send_telegram(send_text, cid)
