@@ -31,7 +31,7 @@ def send_telegram(message, target_id):
         "chat_id": target_id.strip(),
         "text": message,
         "parse_mode": "HTML",
-        "disable_web_page_preview": True # 汇总消息建议关闭预览，否则链接太多会很乱
+        "disable_web_page_preview": True 
     }
     try:
         requests.post(url, json=payload, timeout=15)
@@ -87,7 +87,7 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         seller = get_v("nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold") or "未知"
         rel = get_v("relationshipToIssuer") or "未知"
 
-        # 预警单条消息模板 (不带末尾 Hashtag)
+        # 预警单条消息模板
         item_msg = (
             f"🚨 <b>重大抛售预警</b>\n"
             f"🕒 发布时间: {pub_time_fmt}\n"
@@ -110,7 +110,7 @@ def run():
         seen_ids = set()
 
     current_batch_seen = set()
-    hit_messages = [] # 用于存储本次运行命中的所有预警
+    hit_messages = [] 
     new_ids = []
 
     try:
@@ -128,22 +128,23 @@ def run():
                 msg_content = check_and_parse(xml_data, display_url, entry.updated)
                 if msg_content:
                     hit_messages.append(msg_content)
-                new_ids.append(acc_id) # 无论是否符合金额，只要处理过就存入，避免重复请求 XML
+                new_ids.append(acc_id)
 
-        # --- 汇总发送逻辑 ---
+        # --- 修改后的汇总编号逻辑 ---
         if hit_messages:
-            # 用分界线连接多条信息
-            separator = "\n" + "—" * 20 + "\n"
-            final_body = separator.join(hit_messages)
+            # 1. 为每条信息增加编号
+            numbered_messages = [f"{i}. {msg}" for i, msg in enumerate(hit_messages, 1)]
             
-            # 在最后加上 Hashtag
+            separator = "\n" + "—" * 20 + "\n"
+            final_body = separator.join(numbered_messages)
+            
             final_message = f"{final_body}\n\n#Form4 #InsiderTrading"
             
-            # 检查长度（TG上限4096），如果超长则分条发送，最后一条带Hashtag
+            # 超长处理逻辑
             if len(final_message) > 4000:
-                for single_msg in hit_messages:
-                    # 如果只有一条超长（极少见），也会单独发
-                    send_text = single_msg + (f"\n\n#Form4 $InsiderTrading" if single_msg == hit_messages[-1] else "")
+                for i, single_msg in enumerate(numbered_messages, 1):
+                    # 确保最后一条带 Hashtag
+                    send_text = single_msg + (f"\n\n#Form4 #InsiderTrading" if i == len(numbered_messages) else "")
                     for cid in CHAT_IDS:
                         if cid.strip(): send_telegram(send_text, cid)
             else:
@@ -153,7 +154,6 @@ def run():
             
             print(f"📊 本次运行汇总推送了 {len(hit_messages)} 条信号")
 
-        # 更新缓存文件
         if new_ids:
             with open(CACHE_FILE, "a") as f:
                 for i in new_ids: f.write(i + "\n")
