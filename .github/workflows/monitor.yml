@@ -1,0 +1,39 @@
+name: SEC Form 144 Real-time Monitor
+
+on:
+  schedule:
+    # 每10分钟一次，周一至周五，涵盖美东 4:00-20:00
+    - cron: '*/10 8-23,0 * * 1-5'
+  workflow_dispatch: 
+
+jobs:
+  run-monitor:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # 必须赋予写入权限以更新 seen_ids.txt
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/set-up-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install Dependencies
+        run: pip install feedparser curl_cffi requests
+
+      - name: Execute Script
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          # 此处填写逗号分隔的 ID 列表
+          TG_CHAT_IDS: ${{ secrets.TG_CHAT_IDS }}
+        run: python monitor.py
+
+      - name: Sync Cache to Repo
+        run: |
+          git config --global user.name "Bot-Monitor"
+          git config --global user.email "bot@monitor.com"
+          git add seen_ids.txt
+          git commit -m "chore: update seen_ids [skip ci]" || exit 0
+          git push
