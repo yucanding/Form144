@@ -2,7 +2,7 @@ name: SEC Form 144 Real-time Monitor
 
 on:
   schedule:
-    # 每10分钟一次，周一至周五，涵盖美东 4:00-20:00
+    # 每10分钟一次，周一至周五，涵盖美东 4:00-20:00 (UTC 8:00-00:00)
     - cron: '*/10 8-23,0 * * 1-5'
   workflow_dispatch: 
 
@@ -10,13 +10,14 @@ jobs:
   run-monitor:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # 必须赋予写入权限以更新 seen_ids.txt
+      contents: write 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/set-up-python@v4
+        # 注意这里：去掉了 set 和 up 之间的横杠
+        uses: actions/setup-python@v4 
         with:
           python-version: '3.9'
 
@@ -26,7 +27,6 @@ jobs:
       - name: Execute Script
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
-          # 此处填写逗号分隔的 ID 列表
           TG_CHAT_IDS: ${{ secrets.TG_CHAT_IDS }}
         run: python monitor.py
 
