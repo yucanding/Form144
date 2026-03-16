@@ -6,9 +6,8 @@ from datetime import datetime
 import random
 import os
 
-# --- 配置从环境变量读取 ---
+# --- 配置区 ---
 TOKEN = os.getenv("TG_BOT_TOKEN")
-# 支持多个 ID，用逗号分隔，如: "123456,-100987654321"
 CHAT_IDS = os.getenv("TG_CHAT_IDS", "").split(",")
 CACHE_FILE = "seen_ids.txt"
 
@@ -32,10 +31,10 @@ def send_telegram(message, target_id):
         "chat_id": target_id.strip(),
         "text": message,
         "parse_mode": "HTML",
-        "disable_web_page_preview": False
+        "disable_web_page_preview": True # 汇总消息建议关闭预览，否则链接太多会很乱
     }
     try:
-        requests.post(url, json=payload, timeout=10)
+        requests.post(url, json=payload, timeout=15)
     except Exception as e:
         print(f"向 {target_id} 发送失败: {e}")
 
@@ -69,7 +68,6 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
             node = root.find(f".//{{*}}{tag}")
             return node.text if node is not None else ""
 
-        # 过滤
         if get_v("planAdoptionDate").strip(): return None
         nature = get_v("natureOfAcquisitionTransaction").lower()
         if any(kw in nature for kw in EXCLUDE_KEYWORDS): return None
@@ -79,7 +77,6 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         except: market_value = 0
         if market_value < 1000000: return None
 
-        # 格式化
         dt = datetime.fromisoformat(pub_time_raw)
         pub_time_fmt = dt.strftime("%Y-%m-%d %H:%M:%S") + " ET"
         issuer = get_v("issuerName") or "未知"
@@ -90,67 +87,76 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         seller = get_v("nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold") or "未知"
         rel = get_v("relationshipToIssuer") or "未知"
 
-        # 消息模板
-        msg = (
+        # 预警单条消息模板 (不带末尾 Hashtag)
+        item_msg = (
             f"🚨 <b>重大抛售预警</b>\n"
             f"🕒 发布时间: {pub_time_fmt}\n"
-            f"🏢 发行公司: <b>${ticker}</b> ({issuer})\n"
+            f"🏢 发行公司: ${ticker} ({issuer})\n"
             f"👤 卖家姓名: {seller} ({rel})\n"
             f"📊 拟卖股数: {shares:,.0f} 股\n"
-            f"📉 抛售占比: <b>{sell_percent:.4f}%</b>\n"
-            f"💰 拟卖总额: <b>${market_value:,.2f}</b>\n"
+            f"📉 抛售占比: {sell_percent:.4f}%\n"
+            f"💰 拟卖总额: ${market_value:,.2f}\n"
             f"📝 取得性质: {nature.upper()}\n"
             f"🔗 <a href='{display_url}'>点击查看公告</a>"
         )
-        return msg
+        return item_msg
     except: return None
 
 def run():
-    # 1. 加载缓存
     if os.path.exists(CACHE_FILE):
         with open(CACHE_FILE, "r") as f:
             seen_ids = set(f.read().splitlines())
     else:
         seen_ids = set()
 
-    # 2. 建立一个“当前运行中”的临时记录，防止同一次运行内重复
     current_batch_seen = set()
+    hit_messages = [] # 用于存储本次运行命中的所有预警
+    new_ids = []
 
     try:
         resp = requests.get(FEED_URL, headers=SEC_HEADERS, impersonate="chrome120", timeout=30)
         feed = feedparser.parse(resp.content)
-        new_ids = []
         
         for entry in feed.entries:
             acc_id = entry.link.split('/')[-2]
+            if acc_id in seen_ids or acc_id in current_batch_seen: continue
             
-            # --- 核心修复：检查持久化缓存 OR 当前批次缓存 ---
-            if acc_id in seen_ids or acc_id in current_batch_seen:
-                continue
-            
-            # 立即标记为已看到，防止同一批次里的 Subject/Reporting 重复触发
             current_batch_seen.add(acc_id)
-            
             xml_data, display_url = get_xml_data(entry.link)
+            
             if xml_data:
-                msg = check_and_parse(xml_data, display_url, entry.updated)
-                if msg:
-                    # 推送
-                    for cid in CHAT_IDS:
-                        if cid.strip(): send_telegram(msg, cid)
-                    print(f"✅ 已推送: {acc_id}")
-                    
-                    # 只有真正符合过滤条件并推送到 TG 的，才记入 new_ids
-                    # 如果你希望所有处理过的（无论是否符合金额条件）都以后不再处理，
-                    # 这一行应该放在 if xml_data 之后
-                    new_ids.append(acc_id)
+                msg_content = check_and_parse(xml_data, display_url, entry.updated)
+                if msg_content:
+                    hit_messages.append(msg_content)
+                new_ids.append(acc_id) # 无论是否符合金额，只要处理过就存入，避免重复请求 XML
 
-        # 3. 更新持久化缓存文件
+        # --- 汇总发送逻辑 ---
+        if hit_messages:
+            # 用分界线连接多条信息
+            separator = "\n" + "—" * 20 + "\n"
+            final_body = separator.join(hit_messages)
+            
+            # 在最后加上 Hashtag
+            final_message = f"{final_body}\n\n#Form4 #InsiderTrading"
+            
+            # 检查长度（TG上限4096），如果超长则分条发送，最后一条带Hashtag
+            if len(final_message) > 4000:
+                for single_msg in hit_messages:
+                    # 如果只有一条超长（极少见），也会单独发
+                    send_text = single_msg + (f"\n\n#Form4 $InsiderTrading" if single_msg == hit_messages[-1] else "")
+                    for cid in CHAT_IDS:
+                        if cid.strip(): send_telegram(send_text, cid)
+            else:
+                # 正常合并发送
+                for cid in CHAT_IDS:
+                    if cid.strip(): send_telegram(final_message, cid)
+            
+            print(f"📊 本次运行汇总推送了 {len(hit_messages)} 条信号")
+
+        # 更新缓存文件
         if new_ids:
             with open(CACHE_FILE, "a") as f:
-                for i in new_ids:
-                    f.write(i + "\n")
-            print(f"📊 本次新增 {len(new_ids)} 条记录到缓存")
+                for i in new_ids: f.write(i + "\n")
                 
     except Exception as e:
         print(f"🚨 运行异常: {e}")
