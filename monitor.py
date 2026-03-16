@@ -144,7 +144,7 @@ def run():
             separator = "\n" + "—" * 20 + "\n"
             body = separator.join(numbered_messages)
             
-            final_message = f"{header}{body}\n\n#Form4 #InsiderTrading"
+            final_message = f"{header}{body}\n\n#Form144 #InsiderTrading"
             
             # 超长处理
             if len(final_message) > 4000:
