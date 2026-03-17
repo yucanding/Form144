@@ -2,8 +2,8 @@ name: SEC Form 144 Real-time Monitor
 
 on:
   schedule:
-    # 每10分钟一次，周一至周五，涵盖美东 4:00-20:00 (UTC 8:00-00:00)
-    - cron: '*/10 8-23,0 * * 1-5'
+    # 每15分钟一次，周一至周五，涵盖美东 4:00-20:00 (UTC 8:00-00:00)
+    - cron: '*/15 8-23,0 * * 1-5'
   workflow_dispatch: 
 
 jobs:
