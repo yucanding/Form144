@@ -12,7 +12,7 @@ CHAT_IDS = os.getenv("TG_CHAT_IDS", "").split(",")
 CACHE_FILE = "seen_ids.txt"
 
 SEC_HEADERS = {
-    "User-Agent": "Academic Research Bot (fywang@umich.edu)",
+    "User-Agent": "Academic Research Bot (fywanz@umich.edu)",
     "Accept": "application/xml,text/html",
     "Host": "www.sec.gov"
 }
@@ -23,7 +23,8 @@ YAHOO_HEADERS = {
 
 FEED_URL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=144&count=100&output=atom"
 
-EXCLUDE_KEYWORDS = ["restricted stock", "stock option exercise", "rsu", "option exercise", "performance share", "vesting", "ltip", "consideration", "award", "compensation"]
+EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "exercise", "dividend", "exchange", "grant", 
+                    "performance", "vesting", "ltip", "consideration", "award", "compensation"]
 
 def send_telegram(message, target_id):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -92,14 +93,14 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
 
         # 核心数据模板（移除了标题行）
         item_msg = (
-            f"🕒 发布时间: {pub_time_fmt}\n"
-            f"🏢 发行公司: ${ticker} ({issuer})\n"
-            f"👤 卖家姓名: {seller} ({rel})\n"
-            f"📊 拟卖股数: {shares:,.0f} 股\n"
-            f"📉 抛售占比: {sell_percent:.4f}%\n"
-            f"💰 拟卖总额: ${market_value:,.2f}\n"
-            f"📝 取得性质: {nature.upper()}\n"
-            f"🔗 <a href='{display_url}'>点击查看公告</a>"
+            f"🕒发布时间: {pub_time_fmt}\n"
+            f"🏢公司: ${ticker} ({issuer})\n"
+            f"💰总额: ${market_value:,.2f}\n"
+            f"👤人名: {seller} ({rel})\n"
+            f"📊股数: {shares:,.0f} 股\n"
+            f"📉占总股本比例: {sell_percent:.4f}%\n"
+            f"📝取得方式: {nature.upper()}\n"
+            f"🔗<a href='{display_url}'>点击查看公告</a>"
         )
         return item_msg
     except: return None
