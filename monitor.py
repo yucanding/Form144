@@ -148,7 +148,7 @@ def run():
             separator = "\n" + "—" * 20 + "\n"
             body = separator.join(numbered_messages)
             
-            final_message = f"{header}{body}\n\n#Form144 #InsiderTrading"
+            final_message = f"{header}{body}\n\n#InsiderTrading #Form144"
             
             # 超长处理
             if len(final_message) > 4000:
@@ -156,7 +156,7 @@ def run():
                 for cid in CHAT_IDS:
                     if cid.strip(): send_telegram(header, cid)
                 for i, single_msg in enumerate(numbered_messages, 1):
-                    send_text = single_msg + (f"\n\n#Form4 #InsiderTrading" if i == len(numbered_messages) else "")
+                    send_text = single_msg + (f"\n\n##InsiderTrading Form144" if i == len(numbered_messages) else "")
                     for cid in CHAT_IDS:
                         if cid.strip(): send_telegram(send_text, cid)
             else:
