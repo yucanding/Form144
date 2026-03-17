@@ -88,6 +88,9 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         outstanding = float(get_v("noOfUnitsOutstanding") or 0)
         sell_percent = (shares / outstanding * 100) if outstanding > 0 else 0
         ticker = get_ticker(issuer)
+        # 如果无法获取 Ticker (N/A)，则直接丢弃该条记录
+        if ticker == "N/A":
+            return None
         seller = get_v("nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold") or "未知"
         rel = get_v("relationshipToIssuer") or "未知"
 
@@ -136,7 +139,7 @@ def run():
         # --- 汇总编号逻辑 ---
         if hit_messages:
             # 1. 统一定义标题
-            header = "🚨 <b>重大抛售预警</b>\n\n"
+            header = "🚨<b>内部人士卖出警报</b>\n\n"
             
             # 2. 为每条信息增加编号
             numbered_messages = [f"{i}. {msg}" for i, msg in enumerate(hit_messages, 1)]
