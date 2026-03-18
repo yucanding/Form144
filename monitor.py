@@ -24,7 +24,8 @@ YAHOO_HEADERS = {
 FEED_URL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=144&count=100&output=atom"
 
 EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "exercise", "dividend", "exchange", "grant", 
-                    "performance", "vesting", "ltip", "consideration", "award", "compensation"]
+                    "performance", "vesting", "ltip", "consideration", "award", "compensation",
+                   "charitable", "charity", "rollover"]
 
 def send_telegram(message, target_id):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
