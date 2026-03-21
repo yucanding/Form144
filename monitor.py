@@ -26,7 +26,7 @@ FEED_URL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=144&
 EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "psu", "exercise", "dividend", "exchange", "grant", 
                     "performance", "vesting", "ltip", "consideration", "award", "compensation",
                    "charitable", "charity", "rollover", "gift", "class b", "tax", "bonus",
-                   "retained", "indirectly acquired"]
+                   "retained", "indirectly acquired", "share transfer", "liquidating distribution"]
 
 def send_telegram(message, target_id):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
