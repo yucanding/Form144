@@ -12,7 +12,7 @@ CHAT_IDS = os.getenv("TG_CHAT_IDS", "").split(",")
 CACHE_FILE = "seen_ids.txt"
 
 SEC_HEADERS = {
-    "User-Agent": "Academic Research Bot (fywanz@umich.edu)",
+    "User-Agent": "Academic Research Bot (fyzhanz@umich.edu)",
     "Accept": "application/xml,text/html",
     "Host": "www.sec.gov"
 }
@@ -26,7 +26,7 @@ FEED_URL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=144&
 EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "psu", "exercise", "dividend", "exchange", "grant", 
                     "performance", "vesting", "ltip", "consideration", "award", "compensation",
                    "charitable", "charity", "rollover", "gift", "class b", "tax", "bonus",
-                   "retained", "indirectly acquired", "share transfer", "liquidating distribution"]
+                   "retained", "indirectly acquired", "share transfer", "liquidating distribution", "estate"]
 
 def send_telegram(message, target_id):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
@@ -89,6 +89,8 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         shares = float(get_v("noOfUnitsSold") or 0)
         outstanding = float(get_v("noOfUnitsOutstanding") or 0)
         sell_percent = (shares / outstanding * 100) if outstanding > 0 else 0
+        if sell_percent <= 0.01:
+            return None
         ticker = get_ticker(issuer)
         # 如果无法获取 Ticker (N/A)，则直接丢弃该条记录
         if ticker == "N/A":
