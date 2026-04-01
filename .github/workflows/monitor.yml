@@ -1,13 +1,14 @@
 name: SEC Form 144 Real-time Monitor
 
 on:
-  # 内部定时器已停用，现在由外部 cron-job.org 通过 API 唤醒
-  # schedule:
-  #   - cron: '*/15 8-23 * * 1'
-  #   - cron: '*/15 * * * 2-5'
-  #   - cron: '*/15 0 * * 6'
+  schedule:
+    # 🎯 设置美东时间 (ET) 周一到周五晚上 10:00 运行一次
+    # 换算为 UTC 时间如下：
+    # 夏令时 (EDT): 次日 02:00 UTC (当前配置) -> '0 2 * * 2-6'
+    # 冬令时 (EST): 次日 03:00 UTC -> '0 3 * * 2-6'
+    - cron: '0 2 * * 2-6'
 
-  workflow_dispatch:
+  workflow_dispatch: # 保留手动触发按钮
 
 jobs:
   run-monitor:
@@ -36,6 +37,16 @@ jobs:
         run: |
           git config --global user.name "Bot-Monitor"
           git config --global user.email "bot@monitor.com"
+          
+          # 确保文件存在，防止 git add 报错
+          touch seen_ids.txt
+          
           git add seen_ids.txt
-          git commit -m "chore: update seen_ids [skip ci]" || exit 0
-          git push
+          
+          # 检查是否有更新，有更新才提交，防止 workflow 报错
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update seen_ids [skip ci]"
+            git push
+          fi
