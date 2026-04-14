@@ -96,7 +96,7 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
             return None
         ticker = get_ticker(issuer)
         # 如果无法获取 Ticker (N/A)，则直接丢弃该条记录
-        if ticker == "N/A":
+        if ticker == "N/A" or len(ticker) > 5:
             return None
         seller = get_v("nameOfPersonForWhoseAccountTheSecuritiesAreToBeSold") or "未知"
         rel = get_v("relationshipToIssuer") or "未知"
