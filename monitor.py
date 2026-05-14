@@ -85,7 +85,7 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         try:
             market_value = float(get_v("aggregateMarketValue") or 0)
         except: market_value = 0
-        if market_value < 1000000: return None
+        if market_value < 2000000: return None
 
         dt = datetime.fromisoformat(pub_time_raw)
         pub_time_fmt = dt.strftime("%Y-%m-%d %H:%M:%S") + " ET"
@@ -93,7 +93,7 @@ def check_and_parse(xml_content, display_url, pub_time_raw):
         shares = float(get_v("noOfUnitsSold") or 0)
         outstanding = float(get_v("noOfUnitsOutstanding") or 0)
         sell_percent = (shares / outstanding * 100) if outstanding > 0 else 0
-        if sell_percent <= 0.01:
+        if sell_percent <= 0.05:
             return None
         ticker = get_ticker(issuer)
         # 如果无法获取 Ticker (N/A)，则直接丢弃该条记录
