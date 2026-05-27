@@ -30,7 +30,8 @@ EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "psu", "exercise", "div
                    "foundation", "in kind", "pro rata", "convert", "esop", "preferred stock", "preferred shares",
                    "business combination", "private shares", "consummation", "deed", "earnout", "espp", "employee stock purchase",
                    "transaction consideration", "family trust", "co-trustee", "situs", "affiliated", "received in",
-                   "distribution", "spac", "private transaction", "founder", "pre-ipo"]
+                   "distribution", "spac", "private transaction", "founder", "pre-ipo", "ipo", "initial public offering",
+                   "conversion of preference shares", "founder shares"]
 
 def send_telegram(message, target_id):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
