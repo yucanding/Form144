@@ -29,7 +29,7 @@ EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "psu", "exercise", "div
                    "retained", "indirectly acquired", "share transfer", "liquidating distribution", "estate",
                    "foundation", "in kind", "pro rata", "convert", "esop", "preferred stock", "preferred shares",
                    "business combination", "private shares", "consummation", "deed", "earnout", "espp", "employee stock purchase",
-                   "transaction consideration", "family trust", "co-trustee", "situs", "affiliated", "received in",
+                   "transaction consideration", "trust", "co-trustee", "situs", "affiliated", "received in",
                    "distribution", "spac", "private transaction", "founder", "pre-ipo", "ipo", "initial public offering",
                    "conversion of preference shares", "founder shares"]
 
