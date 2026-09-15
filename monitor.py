@@ -25,13 +25,15 @@ FEED_URL = "https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=144&
 
 EXCLUDE_KEYWORDS = ["restricted stock", "option", "rsu", "psu", "exercise", "dividend", "exchange", "grant", 
                     "performance", "vesting", "ltip", "no consideration", "award", "compensation",
-                   "charitable", "charity", "rollover", "gift", "class b", "tax", "bonus",
-                   "retained", "indirectly acquired", "share transfer", "liquidating distribution", "estate",
-                   "foundation", "in kind", "pro rata", "convert", "esop", "preferred stock", "preferred shares",
-                   "business combination", "private shares", "consummation", "deed", "earnout", "espp", "employee stock purchase",
-                   "transaction consideration", "trust", "co-trustee", "situs", "affiliated", "received in",
-                   "distribution", "spac", "private transaction", "founder", "pre-ipo", "ipo", "initial public offering",
-                   "conversion of preference shares", "founder shares", "401", "inheritance", "equity incentive plan", "stock purchase plan"]
+                    "charitable", "charity", "rollover", "gift", "class b", "tax", "bonus",
+                    "retained", "indirectly acquired", "share transfer", "liquidating distribution", "estate",
+                    "foundation", "in kind", "pro rata", "convert", "esop", "preferred stock", "preferred shares",
+                    "business combination", "private shares", "consummation", "deed", "earnout", "espp", "employee stock purchase",
+                    "transaction consideration", "trust", "co-trustee", "situs", "affiliated", "received in",
+                    "distribution", "spac", "private transaction", "founder", "pre-ipo", "ipo", "initial public offering",
+                    "conversion of preference shares", "founder shares", "401", "inheritance", "equity incentive plan", "stock purchase plan",
+                    "disbursement", "stock plan", "reorganization", "10b5-1", "merger", "conversion", "services rendered", "for services",
+                    "consulting", "advisory fee"]
 
 def send_telegram(message, target_id):
     url = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
