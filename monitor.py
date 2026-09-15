@@ -149,16 +149,18 @@ def run():
 
         # --- 汇总编号逻辑 ---
         if hit_messages:
-            # 1. 统一定义标题
             header = "🚨<b>内部人士卖出警报</b>\n\n"
-            
-            # 2. 为每条信息增加编号
-            numbered_messages = [f"{i}. {msg}" for i, msg in enumerate(hit_messages, 1)]
-            
-            # 3. 拼接
+
+            numbered_messages = []
+            for i, msg in enumerate(hit_messages, 1):
+                lines = msg.split("\n")
+                first = f"{i}. {lines[0]}"
+                rest = [f"   {line}" for line in lines[1:]]  # 3个空格，和“1. ”对齐
+                numbered_messages.append("\n".join([first] + rest))
+
             separator = "\n" + "—" * 20 + "\n"
             body = separator.join(numbered_messages)
-            
+
             final_message = f"{header}{body}\n\n#InsiderTrading #Form144"
             
             # 超长处理
