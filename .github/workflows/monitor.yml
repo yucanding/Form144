@@ -2,30 +2,33 @@ name: SEC Form 144 Real-time Monitor
 
 on:
   schedule:
-    # 🎯 设置美东时间 (ET) 周一到周五晚上 10:00 运行一次
-    # 换算为 UTC 时间如下：
-    # 夏令时 (EDT): 次日 02:00 UTC (当前配置) -> '0 2 * * 2-6'
-    # 冬令时 (EST): 次日 03:00 UTC -> '0 3 * * 2-6'
+    # 美东时间周一至周五 22:00
+    # 当前采用夏令时对应的 UTC 时间
     - cron: '0 2 * * 2-6'
 
-  workflow_dispatch: # 保留手动触发按钮
+  workflow_dispatch:
 
 jobs:
   run-monitor:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
+
     permissions:
-      contents: write 
+      contents: write
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4 
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.11'
+          cache: pip
 
       - name: Install Dependencies
-        run: pip install feedparser curl_cffi requests yfinance beautifulsoup4
+        run: |
+          python -m pip install --upgrade pip
+          pip install feedparser curl_cffi requests yfinance beautifulsoup4
 
       - name: Execute Script
         env:
@@ -37,13 +40,11 @@ jobs:
         run: |
           git config --global user.name "Bot-Monitor"
           git config --global user.email "bot@monitor.com"
-          
-          # 确保文件存在，防止 git add 报错
+
           touch seen_ids.txt
-          
+
           git add seen_ids.txt
-          
-          # 检查是否有更新，有更新才提交，防止 workflow 报错
+
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
